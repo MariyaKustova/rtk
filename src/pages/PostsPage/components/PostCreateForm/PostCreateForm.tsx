@@ -12,14 +12,17 @@ import {
   Select,
   TextField,
 } from "@mui/material";
-import useSWR, { useSWRConfig } from "swr";
 import toast from "react-hot-toast";
+
+import { FormValues } from "@model/postsTypes";
+import {
+  useCreatePostMutation,
+  useGetPostsQuery,
+  useGetTagsListQuery,
+} from "@api/postsApi";
 import { initialValues } from "./constants";
 import { FieldsNames } from "./types";
-import { FormValues, Post } from "../../../../model/postsTypes";
 import { getRandomInt } from "../../../../utils";
-import { postsApi } from "../../../../api/postsApi";
-import { POSTS_QUERY_KEYS } from "../../constants";
 
 import s from "./PostCreateForm.module.scss";
 
@@ -29,18 +32,12 @@ interface PostCreateFormProps {
 }
 
 const PostCreateForm = ({ open, onClose }: PostCreateFormProps) => {
-  const { cache, mutate } = useSWRConfig();
+  const { data: posts = [] } = useGetPostsQuery(undefined);
 
-  const posts = cache.get(POSTS_QUERY_KEYS.POSTS);
-  const postsData: Post[] = posts?.data ?? [];
+  const postsUserIds = [...new Set(posts.map(({ userId }) => userId))];
 
-  const postsUserIds = [...new Set(postsData?.map(({ userId }) => userId))];
-
-  const { data: tagsList, error } = useSWR(
-    POSTS_QUERY_KEYS.LOAD_TAGS,
-    postsApi.getTagsList,
-    { revalidateIfStale: false }
-  );
+  const { data: tagsList, error } = useGetTagsListQuery(undefined);
+  const [addPost] = useCreatePostMutation();
 
   if (error) {
     toast.error("Error loading...");
@@ -53,30 +50,12 @@ const PostCreateForm = ({ open, onClose }: PostCreateFormProps) => {
   } = useForm<FormValues>({
     defaultValues: initialValues,
   });
-  const onSubmit = async (data: FormValues) => {
-    const userId = postsUserIds[getRandomInt(postsUserIds.length - 1)];
-
-    const newPost = await mutate(POSTS_QUERY_KEYS.ADD_POST, () =>
-      postsApi.createPost({
-        title: data.title,
-        userId,
-      })
-    );
-
-    cache.set(POSTS_QUERY_KEYS.POSTS, {
-      ...posts,
-      data: [
-        ...postsData,
-        {
-          ...newPost,
-          body: data.body,
-          tags: data.tags,
-          reactions: {
-            likes: 0,
-            dislikes: 0,
-          },
-        },
-      ],
+  const onSubmit = ({ title, body, tags }: FormValues) => {
+    addPost({
+      title,
+      userId: postsUserIds[getRandomInt(postsUserIds.length - 1)],
+      tags,
+      body,
     });
 
     onClose();

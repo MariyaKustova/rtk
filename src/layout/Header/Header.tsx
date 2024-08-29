@@ -1,8 +1,8 @@
 import React from "react";
-
-import { AppBar, Toolbar, Typography } from "@mui/material";
-import { routes } from "../../routes";
 import { NavLink } from "react-router-dom";
+import { AppBar, Toolbar, Typography } from "@mui/material";
+
+import { routes } from "../../routes";
 
 const Header = () => {
   return (

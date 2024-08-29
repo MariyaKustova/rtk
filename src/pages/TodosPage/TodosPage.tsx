@@ -1,31 +1,29 @@
 import React, { useState } from "react";
 import toast from "react-hot-toast";
-import useSWR, { preload, useSWRConfig } from "swr";
+import { useDispatch } from "react-redux";
 
-import { Loader } from "../../core/Loader";
-import { TodoDialog } from "./components/TodoDialog";
-import PageTitle from "../../core/PageTitle";
+import { Loader } from "@core/Loader";
+import PageTitle from "@core/PageTitle";
+import {
+  todosApi,
+  useCreateTodoMutation,
+  useGetTodosQuery,
+} from "@api/todosApi";
 import { getRandomInt } from "../../utils";
 import TodosList from "./components/TodosList";
-import { TODOS_QUERY_KEYS } from "./constants";
-import { todosApi } from "../../api/todosApi";
-
-preload(TODOS_QUERY_KEYS.LOAD_TODOS, todosApi.getTodos);
+import { TodoDialog } from "./components/TodoDialog";
 
 const TodosPage = () => {
+  const dispatch = useDispatch();
+
   const [editTodoId, setEditTodoId] = useState<number | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
-
-  const { mutate } = useSWRConfig();
 
   const {
     data: todos = [],
     error,
     isLoading: isTodosLoading,
-  } = useSWR(TODOS_QUERY_KEYS.LOAD_TODOS, todosApi.getTodos, {
-    revalidateIfStale: false,
-    revalidateOnFocus: false,
-  });
+  } = useGetTodosQuery(undefined);
 
   if (error) {
     toast.error("Error todos loading...");
@@ -34,26 +32,18 @@ const TodosPage = () => {
   const todosUserIds = todos.map(({ userId }) => userId);
   const currentTodo = todos.find((todo) => todo.id === editTodoId);
 
+  const [createTodo] = useCreateTodoMutation();
+
   const onCloseEditDialog = () => setEditTodoId(null);
 
   const addTodo = (value: string) => {
     const userId = todosUserIds?.[getRandomInt(todosUserIds.length - 1)];
 
     if (value.length && todosUserIds?.length && userId) {
-      mutate(`${TODOS_QUERY_KEYS.ADD_TODO}${userId}`, () =>
-        todosApi.createTodo({
-          todo: {
-            userId,
-            todo: value,
-            completed: false,
-          },
-        })
-      ).then((newTodo) => {
-        if (newTodo) {
-          mutate(TODOS_QUERY_KEYS.LOAD_TODOS, [...todos, newTodo], {
-            revalidate: false,
-          });
-        }
+      createTodo({
+        userId,
+        todo: value,
+        completed: false,
       });
     }
     onCloseEditDialog();
@@ -61,60 +51,19 @@ const TodosPage = () => {
 
   const editContentTodo = (value: string) => {
     if (currentTodo && value.length && currentTodo.todo !== value) {
-      mutate(
-        TODOS_QUERY_KEYS.LOAD_TODOS,
-        todos.map((todo) => {
-          if (todo.id === currentTodo.id) {
-            return { ...todo, todo: value };
-          }
-          return todo;
-        }),
-        {
-          revalidate: false,
-        }
-      );
-    }
-    onCloseEditDialog();
-  };
-
-  const toggleCheckboxTodo = async (id: number, completed: boolean) => {
-    if (todos) {
-      const response = await mutate(`${TODOS_QUERY_KEYS.EDIT_TODO}${id}`, () =>
-        todosApi.editTodo(id, completed)
-      );
-
-      if (response) {
-        mutate(
-          TODOS_QUERY_KEYS.LOAD_TODOS,
-          todos.map((todo) => {
-            if (todo.id === response.id) {
-              return { ...todo, completed: response.completed };
+      dispatch<any>(
+        todosApi.util.updateQueryData("getTodos", undefined, (todos) => {
+          return todos.map((todo) => {
+            if (todo.id === editTodoId) {
+              return { ...todo, todo: value };
             }
             return todo;
-          }),
-          {
-            revalidate: false,
-          }
-        );
-      }
+          });
+        })
+      );
     }
-  };
 
-  const deleteTodo = (id: number) => {
-    todos.filter((todo) => todo.id !== id);
-    mutate(`${TODOS_QUERY_KEYS.DELETE_TODO}${id}`, () =>
-      todosApi.deleteTodo(id)
-    ).then((response) => {
-      if (response?.data) {
-        mutate(
-          TODOS_QUERY_KEYS.LOAD_TODOS,
-          todos.filter((todo) => todo.id !== response.data.id),
-          {
-            revalidate: false,
-          }
-        );
-      }
-    });
+    onCloseEditDialog();
   };
 
   return (
@@ -124,14 +73,7 @@ const TodosPage = () => {
         <Loader />
       ) : (
         <>
-          {todos && (
-            <TodosList
-              onCheckboxChange={toggleCheckboxTodo}
-              onEdit={setEditTodoId}
-              todos={todos}
-              onDelete={deleteTodo}
-            />
-          )}
+          {todos && <TodosList todos={todos} onEdit={setEditTodoId} />}
           {Boolean(editTodoId) && (
             <TodoDialog
               open={Boolean(editTodoId)}

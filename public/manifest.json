@@ -1,6 +1,6 @@
 {
-  "short_name": "SWR",
-  "name": "State manager - SWR",
+  "short_name": "RTK-Query",
+  "name": "State manager - RTK-Query",
   "icons": [
     {
       "src": "favicon.svg",

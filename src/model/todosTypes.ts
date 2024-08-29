@@ -1,4 +1,4 @@
-import { BaseResponse } from "./baseTypes";
+import { BaseResponse as BaseTodosResponse } from "./baseTypes";
 
 export interface Todo {
   id: number;
@@ -7,6 +7,6 @@ export interface Todo {
   completed: boolean;
 }
 
-export interface TodosResponse extends BaseResponse {
+export interface TodosResponse extends BaseTodosResponse {
   todos: Todo[];
 }

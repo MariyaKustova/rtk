@@ -1,4 +1,4 @@
-import { BaseResponse } from "./baseTypes";
+import { BaseResponse as BasePostsResponse } from "./baseTypes";
 
 export interface Post {
   id: number;
@@ -13,7 +13,7 @@ export interface Post {
   userId: number;
 }
 
-export interface PostsResponse extends BaseResponse {
+export interface PostsResponse extends BasePostsResponse {
   posts: Post[];
 }
 
