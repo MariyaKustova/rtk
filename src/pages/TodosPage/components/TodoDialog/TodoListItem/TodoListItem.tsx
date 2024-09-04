@@ -21,7 +21,9 @@ const TodoListItem = ({ todo, onEdit }: TodoListItemProps) => {
       <div>
         <Checkbox
           checked={todo.completed}
-          onChange={() => editTodo({ id: todo.id, completed: !todo.completed })}
+          onChange={() =>
+            editTodo({ ...todo, completed: !todo.completed }).unwrap()
+          }
         />
         <span className={todo.completed ? s.TodosListItem__completedTodo : ""}>
           {todo.todo}
@@ -30,7 +32,7 @@ const TodoListItem = ({ todo, onEdit }: TodoListItemProps) => {
       <Controls
         isDisabled={isEditLoading || isDeleteLoading}
         onEdit={() => onEdit(todo.id)}
-        onDelete={() => deleteTodo(todo.id)}
+        onDelete={() => deleteTodo(todo.id).unwrap()}
       />
     </div>
   );

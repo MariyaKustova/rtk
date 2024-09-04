@@ -33,7 +33,9 @@
     "start": "craco start",
     "build": "craco build",
     "test": "craco test",
-    "eject": "craco eject"
+    "eject": "craco eject",
+    "dev": "concurrently \"npm run server\" \"npm run start\"",
+    "server": "json-server -w server/db.json -p 3001"
   },
   "eslintConfig": {
     "extends": [
@@ -54,6 +56,8 @@
     ]
   },
   "devDependencies": {
-    "craco-alias": "^3.0.1"
+    "concurrently": "^8.2.2",
+    "craco-alias": "^3.0.1",
+    "json-server": "^1.0.0-beta.2"
   }
 }

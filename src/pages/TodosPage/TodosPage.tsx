@@ -1,12 +1,11 @@
 import React, { useState } from "react";
 import toast from "react-hot-toast";
-import { useDispatch } from "react-redux";
 
 import { Loader } from "@core/Loader";
 import PageTitle from "@core/PageTitle";
 import {
-  todosApi,
   useCreateTodoMutation,
+  useEditTodoMutation,
   useGetTodosQuery,
 } from "@api/todosApi";
 import { getRandomInt } from "../../utils";
@@ -14,8 +13,6 @@ import TodosList from "./components/TodosList";
 import { TodoDialog } from "./components/TodoDialog";
 
 const TodosPage = () => {
-  const dispatch = useDispatch();
-
   const [editTodoId, setEditTodoId] = useState<number | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
 
@@ -33,6 +30,7 @@ const TodosPage = () => {
   const currentTodo = todos.find((todo) => todo.id === editTodoId);
 
   const [createTodo] = useCreateTodoMutation();
+  const [editTodo] = useEditTodoMutation();
 
   const onCloseEditDialog = () => setEditTodoId(null);
 
@@ -51,16 +49,7 @@ const TodosPage = () => {
 
   const editContentTodo = (value: string) => {
     if (currentTodo && value.length && currentTodo.todo !== value) {
-      dispatch<any>(
-        todosApi.util.updateQueryData("getTodos", undefined, (todos) => {
-          return todos.map((todo) => {
-            if (todo.id === editTodoId) {
-              return { ...todo, todo: value };
-            }
-            return todo;
-          });
-        })
-      );
+      editTodo({ ...currentTodo, todo: value });
     }
 
     onCloseEditDialog();

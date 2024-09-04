@@ -1,4 +1,4 @@
-import { Todo, TodosResponse } from "@model/todosTypes";
+import { Todo } from "@model/todosTypes";
 import { rtkApi } from "./rtkApi";
 
 const BASE_URL = "/todos";
@@ -9,72 +9,30 @@ export const todosApi = rtkApi.injectEndpoints({
       query: () => ({
         url: BASE_URL,
       }),
-      transformResponse: (response: TodosResponse) => response.todos,
+      providesTags: ["Todos"],
     }),
     createTodo: build.mutation<Todo, Omit<Todo, "id">>({
       query: (body) => ({
-        url: `${BASE_URL}/add`,
+        url: BASE_URL,
         method: "post",
         body,
       }),
-      async onQueryStarted(_, { dispatch, queryFulfilled }) {
-        try {
-          const { data: createdTodo } = await queryFulfilled;
-          dispatch(
-            todosApi.util.updateQueryData(
-              "getTodos",
-              undefined,
-              (todos: Todo[]) => {
-                todos.push(createdTodo);
-              }
-            )
-          );
-        } catch {}
-      },
+      invalidatesTags: ["Todos"],
     }),
-    editTodo: build.mutation<Todo, { id: number; completed: boolean }>({
-      query: ({ completed, id }) => ({
-        url: `${BASE_URL}/${id}`,
+    editTodo: build.mutation<Todo, Todo>({
+      query: (todo) => ({
+        url: `${BASE_URL}/${todo.id}`,
         method: "put",
-        body: { completed },
+        body: todo,
       }),
-      async onQueryStarted(_, { dispatch, queryFulfilled }) {
-        try {
-          const { data: editTodo } = await queryFulfilled;
-          dispatch(
-            todosApi.util.updateQueryData(
-              "getTodos",
-              undefined,
-              (todos: Todo[]) =>
-                todos.map((todo) => {
-                  if (todo.id === editTodo.id) {
-                    return editTodo;
-                  }
-                  return todo;
-                })
-            )
-          );
-        } catch {}
-      },
+      invalidatesTags: ["Todos"],
     }),
     deleteTodo: build.mutation<Todo, number>({
       query: (id) => ({
         url: `${BASE_URL}/${id}`,
         method: "delete",
       }),
-      async onQueryStarted(id, { dispatch, queryFulfilled }) {
-        try {
-          const { data: deleteTodo } = await queryFulfilled;
-          dispatch(
-            todosApi.util.updateQueryData(
-              "getTodos",
-              undefined,
-              (todos: Todo[]) =>
-                todos.filter((todo) => todo.id !== deleteTodo.id)
-            )
-          );
-        } catch {}
-      },
+      invalidatesTags: ["Todos"],
     }),
   }),
   overrideExisting: false,

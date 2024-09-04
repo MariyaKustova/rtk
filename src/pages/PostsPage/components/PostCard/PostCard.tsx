@@ -39,8 +39,8 @@ const PostCard = () => {
   };
 
   const handleEditPost = (value: string) => {
-    if (value.length && post?.title !== value && editPostId) {
-      editPost({ id: editPostId, title: value });
+    if (post && value.length && post?.title !== value && editPostId) {
+      editPost({ ...post, id: editPostId, title: value });
     }
     onCloseDialog();
     navigate(RoutePath.POSTS);

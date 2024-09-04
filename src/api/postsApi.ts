@@ -1,4 +1,4 @@
-import { Post, PostsResponse, Tag } from "@model/postsTypes";
+import { Post, Tag } from "@model/postsTypes";
 import { rtkApi } from "./rtkApi";
 
 const BASE_URL = "/posts";
@@ -9,7 +9,7 @@ const postsApi = rtkApi.injectEndpoints({
       query: () => ({
         url: BASE_URL,
       }),
-      transformResponse: (response: PostsResponse) => response.posts,
+      providesTags: ["Posts"],
     }),
     getPostById: build.query<Post, string>({
       query: (id) => ({
@@ -20,87 +20,37 @@ const postsApi = rtkApi.injectEndpoints({
       Post,
       { title: string; userId: number; tags: string[]; body: string }
     >({
-      query: ({ title, userId }) => ({
-        url: `${BASE_URL}/add`,
+      query: (post) => ({
+        url: `${BASE_URL}`,
         method: "POST",
-        body: { title, userId },
+        body: {
+          ...post,
+          reactions: {
+            likes: 0,
+            dislikes: 0,
+          },
+        },
       }),
-      async onQueryStarted({ tags, body }, { dispatch, queryFulfilled }) {
-        try {
-          const { data: createdPost } = await queryFulfilled;
-          dispatch(
-            postsApi.util.updateQueryData(
-              "getPosts",
-              undefined,
-              (posts: Post[]) => {
-                posts.push({
-                  ...createdPost,
-                  reactions: {
-                    likes: 0,
-                    dislikes: 0,
-                  },
-                  tags,
-                  body,
-                });
-              }
-            )
-          );
-        } catch {}
-      },
+      invalidatesTags: ["Posts"],
     }),
-    editPost: build.mutation<Post, { title: string; id: number }>({
-      query: ({ title, id }) => ({
-        url: `${BASE_URL}/${id}`,
+    editPost: build.mutation<Post, Post>({
+      query: (post) => ({
+        url: `${BASE_URL}/${post.id}`,
         method: "put",
-        body: { title },
+        body: post,
       }),
-      async onQueryStarted(_, { dispatch, queryFulfilled }) {
-        try {
-          const { data: editPost } = await queryFulfilled;
-          dispatch(
-            postsApi.util.updateQueryData(
-              "getPosts",
-              undefined,
-              (posts: Post[]) =>
-                posts.map((post) => {
-                  if (post.id === editPost.id) {
-                    return editPost;
-                  }
-                  return post;
-                })
-            )
-          );
-          dispatch(
-            postsApi.util.updateQueryData(
-              "getPostById",
-              String(editPost.id),
-              () => editPost
-            )
-          );
-        } catch {}
-      },
+      invalidatesTags: ["Posts"],
     }),
     deletePost: build.mutation<Post, number>({
       query: (id) => ({
         url: `${BASE_URL}/${id}`,
         method: "delete",
       }),
-      async onQueryStarted(_, { dispatch, queryFulfilled }) {
-        try {
-          const { data: deletedPost } = await queryFulfilled;
-          dispatch(
-            postsApi.util.updateQueryData(
-              "getPosts",
-              undefined,
-              (posts: Post[]) => posts.filter(({ id }) => id !== deletedPost.id)
-            )
-          );
-        } catch {}
-      },
+      invalidatesTags: ["Posts"],
     }),
     getTagsList: build.query<Tag[], undefined>({
       query: () => ({
-        url: `${BASE_URL}/tags`,
+        url: "/tags",
       }),
     }),
   }),

@@ -1,5 +1,3 @@
-import { BaseResponse as BasePostsResponse } from "./baseTypes";
-
 export interface Post {
   id: number;
   title: string;
@@ -11,10 +9,6 @@ export interface Post {
   };
   views: number;
   userId: number;
-}
-
-export interface PostsResponse extends BasePostsResponse {
-  posts: Post[];
 }
 
 export interface Tag {
